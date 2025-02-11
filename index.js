@@ -14,22 +14,22 @@ class NodeGoPinger {
         this.agent = proxyUrl ? this.createProxyAgent(proxyUrl) : null;
         this.lastPingTimestamp = 0;
         this.tasksList = [
-            { code: 'T001', name: 'Verify Email' },
-            { code: 'T002', name: 'Join Telegram Channel' },
-            { code: 'T003', name: 'Join Telegram Group' },
-            { code: 'T004', name: 'Boost Telegram Channel' },
-            { code: 'T005', name: 'Follow us on X' },
-            { code: 'T006', name: 'Rate Chrome Extension' },
-            { code: 'T007', name: 'Join Telegram MiniApp' },
-            { code: 'T009', name: 'Join Discord Channel' },
-            { code: 'T010', name: 'Add NodeGo.Ai to name' },
-            { code: 'T011', name: 'Share Referral Link on X' },
-            { code: 'T012', name: 'Retweet US' },
-            { code: 'T014', name: 'Comment and Tag 3 friends' },
-            { code: 'T100', name: 'Invite 1 friend' },
-            { code: 'T101', name: 'Invite 3 friends' },
-            { code: 'T102', name: 'Invite 5 friends' },
-            { code: 'T103', name: 'Invite 10 friends' }
+            { code: 'T001', name: '验证邮箱' },
+            { code: 'T002', name: '加入 Telegram 频道' },
+            { code: 'T003', name: '加入 Telegram 群组' },
+            { code: 'T004', name: '提升 Telegram 频道' },
+            { code: 'T005', name: '关注我们在 X 上' },
+            { code: 'T006', name: '评价 Chrome 扩展' },
+            { code: 'T007', name: '加入 Telegram MiniApp' },
+            { code: 'T009', name: '加入 Discord 频道' },
+            { code: 'T010', name: '将 NodeGo.Ai 添加到名称中' },
+            { code: 'T011', name: '在 X 上分享推荐链接' },
+            { code: 'T012', name: '转发美国' },
+            { code: 'T014', name: '评论并标签 3 个朋友' },
+            { code: 'T100', name: '邀请 1 个朋友' },
+            { code: 'T101', name: '邀请 3 个朋友' },
+            { code: 'T102', name: '邀请 5 个朋友' },
+            { code: 'T103', name: '邀请 10 个朋友' }
         ];
     }
 
@@ -53,7 +53,7 @@ class NodeGoPinger {
                 };
             }
         } catch (error) {
-            console.error(chalk.red('Invalid proxy URL:'), error.message);
+            console.error(chalk.red('无效的代理 URL:'), error.message);
             return null;
         }
     }
@@ -85,7 +85,7 @@ class NodeGoPinger {
             return await axios(config);
         } catch (error) {
             if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
-                throw new Error(`Proxy connection failed: ${error.message}`);
+                throw new Error(`代理连接失败: ${error.message}`);
             }
             throw error;
         }
@@ -108,7 +108,7 @@ class NodeGoPinger {
                 }))
             };
         } catch (error) {
-            console.error(chalk.red('Failed to fetch user info:'), error.message);
+            console.error(chalk.red('获取用户信息失败:'), error.message);
             throw error;
         }
     }
@@ -131,7 +131,7 @@ class NodeGoPinger {
                 metadataId: response.data.metadata.id
             };
         } catch (error) {
-            console.error(chalk.red(`Ping failed: ${error.message}`));
+            console.error(chalk.red(`Ping 失败: ${error.message}`));
             throw error;
         }
     }
@@ -180,40 +180,40 @@ class NodeGoPinger {
         for (const task of this.tasksList) {
             if (!completedTasks.includes(task.code)) {
                 try {
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay between tasks
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // 任务之间延迟 1 秒
                     const result = await this.claimTask(task.code);
                     results.push({
                         code: task.code,
                         name: task.name,
-                        status: 'success',
+                        status: '成功',
                         statusCode: result.statusCode,
                         message: result.message
                     });
-                    console.log(chalk.green(`✓ Task ${task.code} (${task.name}):`));
-                    console.log(chalk.green(`  Status: ${result.statusCode}`));
-                    console.log(chalk.green(`  Message: ${result.message}`));
+                    console.log(chalk.green(`✓ 任务 ${task.code} (${task.name}):`));
+                    console.log(chalk.green(`  状态: ${result.statusCode}`));
+                    console.log(chalk.green(`  信息: ${result.message}`));
                 } catch (error) {
                     results.push({
                         code: task.code,
                         name: task.name,
-                        status: 'failed',
+                        status: '失败',
                         statusCode: error.statusCode,
                         message: error.message
                     });
                     const errorColor = error.statusCode >= 500 ? 'red' : 'yellow';
-                    console.log(chalk[errorColor](`⨯ Task ${task.code} (${task.name}):`));
-                    console.log(chalk[errorColor](`  Status: ${error.statusCode}`));
-                    console.log(chalk[errorColor](`  Message: ${error.message}`));
+                    console.log(chalk[errorColor](`⨯ 任务 ${task.code} (${task.name}):`));
+                    console.log(chalk[errorColor](`  状态: ${error.statusCode}`));
+                    console.log(chalk[errorColor](`  信息: ${error.message}`));
                 }
             } else {
                 results.push({
                     code: task.code,
                     name: task.name,
-                    status: 'skipped',
+                    status: '跳过',
                     statusCode: 200,
-                    message: 'Task already completed'
+                    message: '任务已完成'
                 });
-                console.log(chalk.white(`⚡ Task ${task.code} (${task.name}): Already completed`));
+                console.log(chalk.white(`⚡ 任务 ${task.code} (${task.name}): 已完成`));
             }
         }
         
@@ -244,7 +244,7 @@ class MultiAccountPinger {
                 proxy: proxyData[index] || null
             }));
         } catch (error) {
-            console.error(chalk.red('Error reading accounts:'), error);
+            console.error(chalk.red('读取账户数据时出错:'), error);
             process.exit(1);
         }
     }
@@ -255,30 +255,30 @@ class MultiAccountPinger {
         try {
             console.log(chalk.white('='.repeat(50)));
             
-            // Get initial user info
+            // 获取用户信息
             const userInfo = await pinger.getUserInfo();
-            console.log(chalk.cyan(`Initial setup for account: ${userInfo.username} (${userInfo.email})`));
+            console.log(chalk.cyan(`账户初始化: ${userInfo.username} (${userInfo.email})`));
             
-            // Perform daily check-in
+            // 执行每日签到
             try {
                 const checkinResponse = await pinger.dailyCheckin();
-                console.log(chalk.green(`Daily Check-in:`));
-                console.log(chalk.green(`  Status: ${checkinResponse.statusCode}`));
-                console.log(chalk.green(`  Message: ${checkinResponse.message}`));
+                console.log(chalk.green(`每日签到:`));
+                console.log(chalk.green(`  状态: ${checkinResponse.statusCode}`));
+                console.log(chalk.green(`  信息: ${checkinResponse.message}`));
             } catch (error) {
-                console.log(chalk.yellow(`Daily Check-in:`));
-                console.log(chalk.yellow(`  Status: ${error.statusCode}`));
-                console.log(chalk.yellow(`  Message: ${error.message}`));
+                console.log(chalk.yellow(`每日签到:`));
+                console.log(chalk.yellow(`  状态: ${error.statusCode}`));
+                console.log(chalk.yellow(`  信息: ${error.message}`));
             }
 
-            // Process all available tasks
-            console.log(chalk.white('\nProcessing initial tasks...'));
+            // 处理所有可用任务
+            console.log(chalk.white('\n处理初始任务...'));
             await pinger.processTasks(userInfo.socialTasks || []);
 
-            console.log(chalk.green('\nInitial tasks completed'));
+            console.log(chalk.green('\n初始任务已完成'));
             console.log(chalk.white('='.repeat(50)));
         } catch (error) {
-            console.error(chalk.red(`Error processing initial tasks: ${error.message}`));
+            console.error(chalk.red(`处理初始任务时出错: ${error.message}`));
             console.log(chalk.white('='.repeat(50)));
         }
     }
@@ -288,23 +288,23 @@ class MultiAccountPinger {
         
         try {
             const userInfo = await pinger.getUserInfo();
-            console.log(chalk.cyan(`\nPinging for account: ${userInfo.username}`));
+            console.log(chalk.cyan(`\nPing 操作: 账户 ${userInfo.username}`));
             
             const pingResponse = await pinger.ping();
-            console.log(chalk.green(`Ping Status:`));
-            console.log(chalk.green(`  Status: ${pingResponse.statusCode}`));
-            console.log(chalk.green(`  Message: ${pingResponse.message}`));
+            console.log(chalk.green(`Ping 状态:`));
+            console.log(chalk.green(`  状态: ${pingResponse.statusCode}`));
+            console.log(chalk.green(`  信息: ${pingResponse.message}`));
             
-            // Display node status
+            // 显示节点状态
             const updatedUserInfo = await pinger.getUserInfo();
             if (updatedUserInfo.nodes.length > 0) {
-                console.log(chalk.magenta('Nodes Status:'));
+                console.log(chalk.magenta('节点状态:'));
                 updatedUserInfo.nodes.forEach((node, index) => {
-                    console.log(`  Node ${index + 1}: ${node.todayPoint} points today`);
+                    console.log(`  节点 ${index + 1}: 今天获得 ${node.todayPoint} 积分`);
                 });
             }
         } catch (error) {
-            console.error(chalk.red(`Error pinging account: ${error.message}`));
+            console.error(chalk.red(`Ping 账户时出错: ${error.message}`));
         }
     }
 
@@ -312,22 +312,22 @@ class MultiAccountPinger {
         displayBanner();
         
         process.on('SIGINT', () => {
-            console.log(chalk.yellow('\nGracefully shutting down...'));
+            console.log(chalk.yellow('\n正在优雅关闭...'));
             this.isRunning = false;
             setTimeout(() => process.exit(0), 1000);
         });
 
-        // Initial processing - run once
-        console.log(chalk.yellow('\n🚀 Performing initial setup and tasks...'));
+        // 初始处理 - 只运行一次
+        console.log(chalk.yellow('\n🚀 正在执行初始设置和任务...'));
         for (const account of this.accounts) {
             if (!this.isRunning) break;
             await this.processInitialTasks(account);
         }
 
-        // Continue with regular pinging
-        console.log(chalk.yellow('\n⚡ Starting regular ping cycle...'));
+        // 启动定时 Ping
+        console.log(chalk.yellow('\n⚡ 启动定时 Ping 循环...'));
         while (this.isRunning) {
-            console.log(chalk.white(`\n⏰ Ping Cycle at ${new Date().toLocaleString()}`));
+            console.log(chalk.white(`\n⏰ Ping 循环开始于 ${new Date().toLocaleString()}`));
             
             for (const account of this.accounts) {
                 if (!this.isRunning) break;
@@ -335,13 +335,13 @@ class MultiAccountPinger {
             }
 
             if (this.isRunning) {
-                console.log(chalk.gray('\nWaiting 15 seconds before next cycle...'));
+                console.log(chalk.gray('\n等待 15 秒后开始下一循环...'));
                 await new Promise(resolve => setTimeout(resolve, 15000));
             }
         }
     }
 }
 
-// Run the multi-account pinger
+// 启动多账户 Ping 操作
 const multiPinger = new MultiAccountPinger();
 multiPinger.runPinger();
