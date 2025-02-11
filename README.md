@@ -23,7 +23,7 @@ NodeGo 平台的自动机器人，支持多个账户和代理配置（HTTP/SOCKS
 git clone https://github.com/lhg1996/Nodego.git
 ```
 ```
-cd Nodego-auto
+cd Nodego
 ```
 
 2. 安装依赖项：
