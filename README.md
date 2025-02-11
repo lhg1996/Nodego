@@ -20,7 +20,7 @@ NodeGo 平台的自动机器人，支持多个账户和代理配置（HTTP/SOCKS
 
 1. 克隆版本库：
 ```
-git clone https://github.com/Mittyadav/Nodego-auto.git
+git clone https://github.com/lhg1996/Nodego.git
 ```
 ```
 cd Nodego-auto
@@ -38,8 +38,8 @@ npm install
    - 例如
      ```
      token1
-     标记 2
-     标记 3
+     token2
+     token3
      ```
 
 2.（可选）在项目根目录下创建 `proxies.txt`：
