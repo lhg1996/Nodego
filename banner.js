@@ -1,4 +1,4 @@
-import chalk from 'lengxin';
+import chalk from 'chalk';
 
 export default function displayBanner() {
 
