@@ -13,23 +13,38 @@ class NodeGoPinger {
         this.bearerToken = token;
         this.agent = proxyUrl ? this.createProxyAgent(proxyUrl) : null;
         this.lastPingTimestamp = 0;
+        this.tasksList = [
+            { code: 'T001', name: 'Verify Email' },
+            { code: 'T002', name: 'Join Telegram Channel' },
+            { code: 'T003', name: 'Join Telegram Group' },
+            { code: 'T004', name: 'Boost Telegram Channel' },
+            { code: 'T005', name: 'Follow us on X' },
+            { code: 'T006', name: 'Rate Chrome Extension' },
+            { code: 'T007', name: 'Join Telegram MiniApp' },
+            { code: 'T009', name: 'Join Discord Channel' },
+            { code: 'T010', name: 'Add NodeGo.Ai to name' },
+            { code: 'T011', name: 'Share Referral Link on X' },
+            { code: 'T012', name: 'Retweet US' },
+            { code: 'T014', name: 'Comment and Tag 3 friends' },
+            { code: 'T100', name: 'Invite 1 friend' },
+            { code: 'T101', name: 'Invite 3 friends' },
+            { code: 'T102', name: 'Invite 5 friends' },
+            { code: 'T103', name: 'Invite 10 friends' }
+        ];
     }
 
     createProxyAgent(proxyUrl) {
         try {
             const parsedUrl = new URL(proxyUrl);
             
-            // Handle different proxy protocols
             if (proxyUrl.startsWith('socks')) {
                 return new SocksProxyAgent(parsedUrl);
             } else if (proxyUrl.startsWith('http')) {
-                // Use appropriate agent for HTTP/HTTPS
                 return {
                     httpAgent: new HttpProxyAgent(parsedUrl),
                     httpsAgent: new HttpsProxyAgent(parsedUrl)
                 };
             } else {
-                // Default to HTTP if no protocol specified
                 const httpUrl = `http://${proxyUrl}`;
                 const httpParsedUrl = new URL(httpUrl);
                 return {
@@ -43,27 +58,6 @@ class NodeGoPinger {
         }
     }
 
-    async getUserInfo() {
-        try {
-            const response = await this.makeRequest('GET', '/user/me');
-            const metadata = response.data.metadata;
-            return {
-                username: metadata.username,
-                email: metadata.email,
-                totalPoint: metadata.rewardPoint,
-                nodes: metadata.nodes.map(node => ({
-                    id: node.id,
-                    totalPoint: node.totalPoint,
-                    todayPoint: node.todayPoint,
-                    isActive: node.isActive
-                }))
-            };
-        } catch (error) {
-            console.error(chalk.red('Failed to fetch user info:'), error.message);
-            throw error; // Propagate error for better handling
-        }
-    }
-
     async makeRequest(method, endpoint, data = null) {
         const config = {
             method,
@@ -74,17 +68,14 @@ class NodeGoPinger {
                 'Accept': '*/*'
             },
             ...(data && { data }),
-            timeout: 30000 // 30 second timeout
+            timeout: 30000
         };
 
-        // Apply proxy agents if configured
         if (this.agent) {
             if (this.agent.httpAgent) {
-                // For HTTP/HTTPS proxies
                 config.httpAgent = this.agent.httpAgent;
                 config.httpsAgent = this.agent.httpsAgent;
             } else {
-                // For SOCKS proxies
                 config.httpAgent = this.agent;
                 config.httpsAgent = this.agent;
             }
@@ -100,11 +91,32 @@ class NodeGoPinger {
         }
     }
 
+    async getUserInfo() {
+        try {
+            const response = await this.makeRequest('GET', '/user/me');
+            const metadata = response.data.metadata;
+            return {
+                username: metadata.username,
+                email: metadata.email,
+                totalPoint: metadata.rewardPoint,
+                socialTasks: metadata.socialTask || [],
+                nodes: metadata.nodes.map(node => ({
+                    id: node.id,
+                    totalPoint: node.totalPoint,
+                    todayPoint: node.todayPoint,
+                    isActive: node.isActive
+                }))
+            };
+        } catch (error) {
+            console.error(chalk.red('Failed to fetch user info:'), error.message);
+            throw error;
+        }
+    }
+
     async ping() {
         try {
             const currentTime = Date.now();
             
-            // Ensure at least a 3-second gap between pings
             if (currentTime - this.lastPingTimestamp < 3000) {
                 await new Promise(resolve => setTimeout(resolve, 3000 - (currentTime - this.lastPingTimestamp)));
             }
@@ -122,6 +134,90 @@ class NodeGoPinger {
             console.error(chalk.red(`Ping failed: ${error.message}`));
             throw error;
         }
+    }
+
+    async dailyCheckin() {
+        try {
+            const response = await this.makeRequest('POST', '/user/checkin');
+            return {
+                statusCode: response.data.statusCode,
+                message: response.data.message,
+                userData: response.data.metadata.user
+            };
+        } catch (error) {
+            const statusCode = error.response?.data?.statusCode || error.response?.status || 500;
+            const message = error.response?.data?.message || error.message;
+            throw {
+                statusCode,
+                message,
+                error: true
+            };
+        }
+    }
+
+    async claimTask(taskId) {
+        try {
+            const response = await this.makeRequest('POST', '/user/task', { taskId });
+            return {
+                statusCode: response.data.statusCode,
+                message: response.data.message,
+                userData: response.data.metadata?.user
+            };
+        } catch (error) {
+            const statusCode = error.response?.data?.statusCode || error.response?.status || 500;
+            const message = error.response?.data?.message || error.message;
+            throw {
+                statusCode,
+                message,
+                error: true
+            };
+        }
+    }
+
+    async processTasks(completedTasks) {
+        const results = [];
+        
+        for (const task of this.tasksList) {
+            if (!completedTasks.includes(task.code)) {
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay between tasks
+                    const result = await this.claimTask(task.code);
+                    results.push({
+                        code: task.code,
+                        name: task.name,
+                        status: 'success',
+                        statusCode: result.statusCode,
+                        message: result.message
+                    });
+                    console.log(chalk.green(`✓ Task ${task.code} (${task.name}):`));
+                    console.log(chalk.green(`  Status: ${result.statusCode}`));
+                    console.log(chalk.green(`  Message: ${result.message}`));
+                } catch (error) {
+                    results.push({
+                        code: task.code,
+                        name: task.name,
+                        status: 'failed',
+                        statusCode: error.statusCode,
+                        message: error.message
+                    });
+                    const errorColor = error.statusCode >= 500 ? 'red' : 'yellow';
+                    console.log(chalk[errorColor](`⨯ Task ${task.code} (${task.name}):`));
+                    console.log(chalk[errorColor](`  Status: ${error.statusCode}`));
+                    console.log(chalk[errorColor](`  Message: ${error.message}`));
+                }
+            } else {
+                results.push({
+                    code: task.code,
+                    name: task.name,
+                    status: 'skipped',
+                    statusCode: 200,
+                    message: 'Task already completed'
+                });
+                console.log(chalk.white(`⚡ Task ${task.code} (${task.name}): Already completed`));
+            }
+        }
+        
+        return results;
     }
 }
 
@@ -153,57 +249,94 @@ class MultiAccountPinger {
         }
     }
 
-    async processSingleAccount(account) {
+    async processInitialTasks(account) {
+        const pinger = new NodeGoPinger(account.token, account.proxy);
+        
+        try {
+            console.log(chalk.white('='.repeat(50)));
+            
+            // Get initial user info
+            const userInfo = await pinger.getUserInfo();
+            console.log(chalk.cyan(`Initial setup for account: ${userInfo.username} (${userInfo.email})`));
+            
+            // Perform daily check-in
+            try {
+                const checkinResponse = await pinger.dailyCheckin();
+                console.log(chalk.green(`Daily Check-in:`));
+                console.log(chalk.green(`  Status: ${checkinResponse.statusCode}`));
+                console.log(chalk.green(`  Message: ${checkinResponse.message}`));
+            } catch (error) {
+                console.log(chalk.yellow(`Daily Check-in:`));
+                console.log(chalk.yellow(`  Status: ${error.statusCode}`));
+                console.log(chalk.yellow(`  Message: ${error.message}`));
+            }
+
+            // Process all available tasks
+            console.log(chalk.white('\nProcessing initial tasks...'));
+            await pinger.processTasks(userInfo.socialTasks || []);
+
+            console.log(chalk.green('\nInitial tasks completed'));
+            console.log(chalk.white('='.repeat(50)));
+        } catch (error) {
+            console.error(chalk.red(`Error processing initial tasks: ${error.message}`));
+            console.log(chalk.white('='.repeat(50)));
+        }
+    }
+
+    async processPing(account) {
         const pinger = new NodeGoPinger(account.token, account.proxy);
         
         try {
             const userInfo = await pinger.getUserInfo();
-            if (!userInfo) return;
-
+            console.log(chalk.cyan(`\nPinging for account: ${userInfo.username}`));
+            
             const pingResponse = await pinger.ping();
-
-            console.log(chalk.white('='.repeat(50)));
-            console.log(chalk.cyan(`Username: ${userInfo.username}`));
-            console.log(chalk.yellow(`Email: ${userInfo.email}`));
+            console.log(chalk.green(`Ping Status:`));
+            console.log(chalk.green(`  Status: ${pingResponse.statusCode}`));
+            console.log(chalk.green(`  Message: ${pingResponse.message}`));
             
-            userInfo.nodes.forEach((node, index) => {
-                console.log(chalk.magenta(`\nNode ${index + 1}:`));
-                console.log(`  ID: ${node.id}`);
-                console.log(`  Total Points: ${node.totalPoint}`);
-                console.log(`  Today's Points: ${node.todayPoint}`);
-                console.log(`  Status: ${node.isActive ? 'Active' : 'Inactive'}`);
-            });
-            
-            console.log(chalk.green(`\nTotal Points: ${userInfo.totalPoint}`));
-            console.log(chalk.green(`Status Code: ${pingResponse.statusCode}`));
-            console.log(chalk.green(`Ping Message: ${pingResponse.message}`));
-            console.log(chalk.white(`Metadata ID: ${pingResponse.metadataId}`));
-            console.log(chalk.white('='.repeat(50)));
+            // Display node status
+            const updatedUserInfo = await pinger.getUserInfo();
+            if (updatedUserInfo.nodes.length > 0) {
+                console.log(chalk.magenta('Nodes Status:'));
+                updatedUserInfo.nodes.forEach((node, index) => {
+                    console.log(`  Node ${index + 1}: ${node.todayPoint} points today`);
+                });
+            }
         } catch (error) {
-            console.error(chalk.red(`Error processing account: ${error.message}`));
+            console.error(chalk.red(`Error pinging account: ${error.message}`));
         }
     }
 
     async runPinger() {
         displayBanner();
         
-        // Handle graceful shutdown
         process.on('SIGINT', () => {
             console.log(chalk.yellow('\nGracefully shutting down...'));
             this.isRunning = false;
             setTimeout(() => process.exit(0), 1000);
         });
 
+        // Initial processing - run once
+        console.log(chalk.yellow('\n🚀 Performing initial setup and tasks...'));
+        for (const account of this.accounts) {
+            if (!this.isRunning) break;
+            await this.processInitialTasks(account);
+        }
+
+        // Continue with regular pinging
+        console.log(chalk.yellow('\n⚡ Starting regular ping cycle...'));
         while (this.isRunning) {
             console.log(chalk.white(`\n⏰ Ping Cycle at ${new Date().toLocaleString()}`));
             
             for (const account of this.accounts) {
                 if (!this.isRunning) break;
-                await this.processSingleAccount(account);
+                await this.processPing(account);
             }
 
             if (this.isRunning) {
-                await new Promise(resolve => setTimeout(resolve, 15000)); // 15 second delay
+                console.log(chalk.gray('\nWaiting 15 seconds before next cycle...'));
+                await new Promise(resolve => setTimeout(resolve, 15000));
             }
         }
     }
